@@ -30,6 +30,8 @@ describe User do
   it { should respond_to(:password_confirmation) }
   it { should respond_to(:authenticate) }
   it { should respond_to(:admin) }
+  it { should respond_to(:microposts) }
+  it { should respond_to(:feed) }
 
   it { should respond_to(:remember_token) }
 
@@ -147,5 +149,35 @@ describe User do
 	its(:remember_token) { should_not be_blank }
 	# Equivalent to: it { @user.remember_token.should_not be_blank }
 
+  end
+
+  describe "microposts" do
+
+	before { @user.save }
+	let!(:older_post) { FactoryGirl.create(:micropost, user: @user, created_at: 1.day.ago) }
+	let!(:newer_post) { FactoryGirl.create(:micropost, user: @user, created_at: 1.hour.ago) }
+
+	it "should have microposts in the right order" do
+	  @user.microposts.should == [newer_post, older_post]
+	end
+
+	it "should destroy user micropsts" do
+	  microposts = @user.microposts.dup
+	  @user.destroy
+	  microposts.should_not be_empty
+	  microposts.each do |post|
+		Micropost.find_by_id(post.id).should be_nil
+	  end
+	end
+
+	describe "associations" do
+
+	  let(:unfollowed_post) { FactoryGirl.create(:micropost, user: FactoryGirl.create(:user)) }
+	  
+	  its(:feed) { should include(older_post) }
+	  its(:feed) { should include(newer_post) }
+	  its(:feed) { should_not include(unfollowed_post) }
+
+	end
   end
 end
