@@ -19,4 +19,10 @@ class Micropost < ActiveRecord::Base
 
   default_scope order: 'microposts.created_at DESC'
 
+  def self.from_users_followed_by(user)
+	ids = "SELECT followed_id FROM Relationships WHERE follower_id = :user_id"
+	Micropost.where("user_id IN (#{ids}) OR user_id = :user_id", 
+					user_id: user.id)
+  end
+
 end
